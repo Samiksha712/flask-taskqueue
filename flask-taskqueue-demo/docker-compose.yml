@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  # The Redis Service
+  redis:
+    image: "redis:alpine"
+    ports:
+      - "6379:6379"
+
+  # The Flask Web Application Service
+  webapp:
+    build: .
+    ports:
+      - "5000:5000"
+    volumes:
+      - .:/app
+    environment:
+      # This tells the webapp to connect to the 'redis' service
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - redis
+
+  # The RQ Worker Service
+  worker:
+    build: .
+    command: rq worker -w rq.worker.SimpleWorker
+    volumes:
+      - .:/app
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - redis
